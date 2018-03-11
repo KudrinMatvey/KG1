@@ -5,23 +5,93 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Filters_Kudrin;
+using System.ComponentModel;
+
 namespace MatrixFilters
 {
+
+
     class MatrixFilter : Filters
     {
         protected float[,] kernel = null;
         protected MatrixFilter() { }
         public MatrixFilter(float[,] kernel)
         { this.kernel = kernel; }
+        public Color calculateNewPixelColorMin(Bitmap sourceImage, int x, int y)
+        {
+            int radiusX = kernel.GetLength(0) / 2;
+            int radiusY = kernel.GetLength(1) / 2;
+
+            Color min = Color.FromArgb(255, 255, 255);
+
+            for (int i = -radiusY; i <= radiusY; i++)
+            {
+                for (int j = -radiusX; j <= radiusX; j++)
+                {
+                    Color curr = sourceImage.GetPixel(Clamp(x + i, 0, sourceImage.Width - 1), Clamp(y + j, 0, sourceImage.Height - 1));
+                    if ((kernel[j + radiusX, i + radiusY] != 0) && (Math.Sqrt(curr.R * curr.R + curr.G * curr.G + curr.B * curr.B) <
+                                                Math.Sqrt(min.R * min.R + min.G * min.G + min.B * min.B)))
+                        min = curr;
+                }
+            }
+            return min;
+        }
+        public int claculatemaxchanel(int c,Bitmap source)
+        {
+            int max = 0;
+            if (c == 0)
+            {
+                for (int i = 0; i < source.Width; i++)
+                    for (int j = 0; j < source.Height; j++)
+                        if (max < source.GetPixel(i, j).R)
+                            max = source.GetPixel(i, j).R;
+            }
+            else
+            if (c == 1)
+            {
+                for (int i = 0; i < source.Width; i++)
+                    for (int j = 0; j < source.Height; j++)
+                        if (max < source.GetPixel(i, j).R)
+                            max = source.GetPixel(i, j).R;
+            }
+
+            if (c == 2)
+            {
+                for (int i = 0; i < source.Width; i++)
+                    for (int j = 0; j < source.Height; j++)
+                        if (max < source.GetPixel(i, j).R)
+                            max = source.GetPixel(i, j).R;
+            }
+            return Clamp(max, 0, 255);
+        }
+        public Color calculateNewPixelColorMax(Bitmap sourceImage, int x, int y)
+        {
+            int radiusX = kernel.GetLength(0) / 2;
+            int radiusY = kernel.GetLength(1) / 2;
+
+            Color max = Color.FromArgb(0, 0, 0);
+
+            for (int i = -radiusY; i <= radiusY; i++)
+            {
+                for (int j = -radiusX; j <= radiusX; j++)
+                {
+                    Color curr = sourceImage.GetPixel(Clamp(x + i, 0, sourceImage.Width - 1), Clamp(y + j, 0, sourceImage.Height - 1));
+                    if ((kernel[j + radiusX, i + radiusY] != 0) && (Math.Sqrt(curr.R * curr.R + curr.G * curr.G + curr.B * curr.B) >
+                                                Math.Sqrt(max.R * max.R + max.G * max.G + max.B * max.B)))
+                        max = curr;
+                }
+            }
+            return max;
+        }
         public void setkernel(float[,] arr, int size)
         {
             kernel = new float[size, size];
-            for (int i = 0; i<size;i++)
-                for(int j = 0;j<size;j++)
+            for (int i = 0; i < size; i++)
+                for (int j = 0; j < size; j++)
                 {
-                    kernel[i,j] = arr[i,jj];
+                    kernel[i, j] = arr[i, j];
                 }
-                }
+        }
         protected override Color CalculateNewPixelColor(Bitmap source, int x, int y)
         {
             int RadiusX = kernel.GetLength(0) / 2;
@@ -248,7 +318,8 @@ namespace MatrixFilters
     }
     class Embosing : MatrixFilter
     {
-        public Embosing() {
+        public Embosing()
+        {
             kernel = new float[3, 3]
             {
                 {0,1,0 },
@@ -313,4 +384,175 @@ namespace MatrixFilters
             return min;
         }
     }
+    class Opening : MatrixFilter
+    {
+        public override Bitmap processImage(Bitmap im, BackgroundWorker worker)
+        {
+
+            Bitmap resultImage = new Bitmap(im.Width, im.Height);
+
+            for (int i = 0; i < im.Width; i++)
+            {
+                worker.ReportProgress((int)((float)i / resultImage.Width * 50));
+                if (worker.CancellationPending)
+                    return null;
+                for (int j = 0; j < im.Height; j++)
+                {
+                    resultImage.SetPixel(i, j, calculateNewPixelColorMin(im, i, j));
+                }
+            }
+
+            Bitmap resultImage1 = new Bitmap(im.Width, im.Height);
+
+            for (int i = 0; i < im.Width; i++)
+            {
+                worker.ReportProgress((int)(50 + (float)i / resultImage.Width * 50));
+                if (worker.CancellationPending)
+                    return null;
+                for (int j = 0; j < im.Height; j++)
+                {
+                    resultImage1.SetPixel(i, j, calculateNewPixelColorMax(resultImage, i, j));
+                }
+            }
+
+            return resultImage1;
+
+        }
+    }
+    class Closing : MatrixFilter
+    {
+        public override Bitmap processImage(Bitmap im, BackgroundWorker worker)
+        {
+
+            Bitmap resultImage = new Bitmap(im.Width, im.Height);
+
+            Bitmap resultImage1 = new Bitmap(im.Width, im.Height);
+
+            for (int i = 0; i < im.Width; i++)
+            {
+                worker.ReportProgress((int)(50 + (float)i / resultImage.Width * 50));
+                if (worker.CancellationPending)
+                    return null;
+                for (int j = 0; j < im.Height; j++)
+                {
+                    resultImage1.SetPixel(i, j, calculateNewPixelColorMax(im, i, j));
+                }
+            }
+            for (int i = 0; i < im.Width; i++)
+            {
+                worker.ReportProgress((int)((float)i / resultImage.Width * 50));
+                if (worker.CancellationPending)
+                    return null;
+                for (int j = 0; j < im.Height; j++)
+                {
+                    resultImage.SetPixel(i, j, calculateNewPixelColorMin(resultImage1, i, j));
+                }
+            }
+            return resultImage;
+        }
+    }
+    class GradFilter : MatrixFilter
+    {
+
+        public override Bitmap processImage(Bitmap im, BackgroundWorker worker)
+        {
+
+            Bitmap resultImage = new Bitmap(im.Width, im.Height);
+
+            for (int i = 0; i < im.Width; i++)
+            {
+                worker.ReportProgress((int)((float)i / resultImage.Width * 33));
+                if (worker.CancellationPending)
+                    return null;
+                for (int j = 0; j < im.Height; j++)
+                {
+                    resultImage.SetPixel(i, j, calculateNewPixelColorMax(im, i, j));
+                }
+            }
+
+            Bitmap resultImage1 = new Bitmap(im.Width, im.Height);
+
+            for (int i = 0; i < im.Width; i++)
+            {
+                worker.ReportProgress((int)(33 + (float)i / resultImage1.Width * 33));
+                if (worker.CancellationPending)
+                    return null;
+                for (int j = 0; j < im.Height; j++)
+                {
+                    resultImage1.SetPixel(i, j, calculateNewPixelColorMin(im, i, j));
+                }
+            }
+
+            for (int i = 0; i < im.Width; i++)
+            {
+                worker.ReportProgress((int)(66 + (float)i / resultImage1.Width * 34));
+                if (worker.CancellationPending)
+                    return null;
+                for (int j = 0; j < im.Height; j++)
+                {
+                    resultImage.SetPixel(i, j, calculateNewPixelColorMin(resultImage1, i, j));
+                }
+            }
+
+
+            return resultImage;
+
+        }
+    }
+    class LinearStretching : MatrixFilter
+    {
+        private int maxR, minR, maxG, minG, maxB, minB;
+        public LinearStretching()
+        {
+            maxR = new int();
+            minR = new int();
+            maxG = new int();
+            minG = new int();
+            maxB = new int();
+            minB = new int();
+        }
+
+        public override Bitmap processImage(Bitmap im, BackgroundWorker worker)
+        {
+            maxR = minR = im.GetPixel(0, 0).R;
+            maxG = minG = im.GetPixel(0, 0).G;
+            maxB = minB = im.GetPixel(0, 0).B;
+
+            for (int i = 0; i < im.Width; i++)
+                for (int j = 0; j < im.Height; j++)
+                {
+                    if (im.GetPixel(i, j).R > maxR)
+                        maxR = im.GetPixel(i, j).R;
+                    if (im.GetPixel(i, j).G > maxG)
+                        maxG = im.GetPixel(i, j).G;
+                    if (im.GetPixel(i, j).B > maxB)
+                        maxB = im.GetPixel(i, j).B;
+                    if (im.GetPixel(i, j).R < minR)
+                        minR = im.GetPixel(i, j).R;
+                    if (im.GetPixel(i, j).G < minG)
+                        minG = im.GetPixel(i, j).G;
+                    if (im.GetPixel(i, j).B < minB)
+                        minB = im.GetPixel(i, j).B;
+                }
+
+            Bitmap resultImage = new Bitmap(im.Width, im.Height);
+
+            for (int i = 0; i < im.Width; i++)
+            {
+                worker.ReportProgress((int)((float)i / resultImage.Width * 100));
+                if (worker.CancellationPending)
+                    return null;
+                for (int j = 0; j < im.Height; j++)
+                {
+                    resultImage.SetPixel(i, j,
+                        Color.FromArgb(Clamp((int)(255 * (im.GetPixel(i, j).R - minR) / (maxR - minR)), 0, 255),
+                                       Clamp((int)(255 * (im.GetPixel(i, j).G - minG) / (maxG - minG)), 0, 255),
+                                       Clamp((int)(255 * (im.GetPixel(i, j).B - minB) / (maxB - minB)), 0, 255)));
+                }
+            }
+            return resultImage;
+        }
+    }
+
+
 }

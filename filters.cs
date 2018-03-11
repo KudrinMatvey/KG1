@@ -10,6 +10,31 @@ namespace Filters_Kudrin
 {
     public abstract class Filters
     {
+        public Color claculatemaxchanel(Bitmap source)
+        {
+            int maxR = 0;
+            int maxG = 0;
+            int maxB = 0;
+            
+            
+                for (int i = 0; i < source.Width; i++)
+                    for (int j = 0; j < source.Height; j++)
+                        if (maxR < source.GetPixel(i, j).R)
+                            maxR = source.GetPixel(i, j).R;
+            
+                for (int i = 0; i < source.Width; i++)
+                    for (int j = 0; j < source.Height; j++)
+                        if (maxG < source.GetPixel(i, j).R)
+                            maxG = source.GetPixel(i, j).R;
+            
+
+                for (int i = 0; i < source.Width; i++)
+                    for (int j = 0; j < source.Height; j++)
+                        if (maxB < source.GetPixel(i, j).R)
+                            maxB = source.GetPixel(i, j).R;
+            
+            return Color.FromArgb(Clamp(maxR, 0, 255), Clamp(maxG, 0, 255), Clamp(maxB, 0, 255));
+        }
         protected abstract Color CalculateNewPixelColor(Bitmap source, int x, int y);
 
         public int Clamp(int value, int min, int max)
@@ -20,7 +45,7 @@ namespace Filters_Kudrin
                 return max;
             return value;
         }
-        public Bitmap processImage(Bitmap source, BackgroundWorker worker)
+        virtual public  Bitmap processImage(Bitmap source, BackgroundWorker worker)
         {
 
 
@@ -120,6 +145,18 @@ namespace Filters_Kudrin
             int newY = Clamp(((int)(y + (rnd.NextDouble() - 0.5f) * 10)), 0, source.Height - 1);
             return source.GetPixel(newX, newY);
         }
+    }
+    class perfect : Filters
+    {
+        protected override Color CalculateNewPixelColor(Bitmap source, int x, int y)
+        {
+            Color max = claculatemaxchanel(source);
+            int r =(int) source.GetPixel(x, y).R / max.R;
+            int g = (int)source.GetPixel(x, y).G / max.G;
+            int b = (int)source.GetPixel(x, y).B / max.B;
+            return Color.FromArgb(Clamp(r, 0, 255), Clamp(g, 0, 255), Clamp(b, 0, 255));
+        }
+        
     }
 }
 

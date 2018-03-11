@@ -13,6 +13,7 @@ namespace KG1
 {
     public partial class Form1 : Form
     {
+        float[,] arr;
         Bitmap image;
         public Form1()
         {
@@ -126,25 +127,34 @@ namespace KG1
 
         private void открытиеToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Filters filter = new Erosion();
-            Filters filter2 = new Dillation();
+            MatrixFilter filter = new Opening();
+            float[,] arr = { { 0, 1, 0 }, { 1, 1, 1 }, { 0, 1, 0 } };
+            filter.setkernel(arr, arr.GetLength(0));
             backgroundWorker1.RunWorkerAsync(filter);
-            backgroundWorker1.RunWorkerAsync(filter2);
         }
 
         private void сужениеToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            MatrixFilter filter = new Erosion();
+            float[,]arr = { { 0,1,0},{ 1,1,1},{ 0,1,0 } };
+            filter.setkernel(arr, arr.GetLength(0));
+            backgroundWorker1.RunWorkerAsync(filter);
         }
 
         private void расширениеToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            MatrixFilter filter = new Dillation();
+            float[,] arr = { { 0, 1, 0 }, { 1, 1, 1 }, { 0, 1, 0 } };
+            filter.setkernel(arr, arr.GetLength(0));
+            backgroundWorker1.RunWorkerAsync(filter);
         }
 
         private void закрытиеToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            MatrixFilter filter = new Closing();
+            float[,] arr = { { 0, 1, 0 }, { 1, 1, 1 }, { 0, 1, 0 } };
+            filter.setkernel(arr, arr.GetLength(0));
+            backgroundWorker1.RunWorkerAsync(filter);
         }
         private void backgroundWorker1_ProgressChanged_1(object sender, ProgressChangedEventArgs e)
         {
@@ -196,11 +206,25 @@ namespace KG1
             Bitmap result = filter.processImage(image, backgroundWorker1);
             backgroundWorker1.RunWorkerAsync(filter);
         }
+        
 
-        private void button1_Click_1(object sender, EventArgs e)
+        private void градиентToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MatrixFilter filter = new GradFilter();
+            Bitmap result = filter.processImage(image, backgroundWorker1);
+            backgroundWorker1.RunWorkerAsync(filter);
+        }
+
+        private void насторитьСтруктурныйЭлементToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
         }
 
+        private void идеальныйОтражательToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Filters filter = new perfect();
+            Bitmap result = filter.processImage(image, backgroundWorker1);
+            backgroundWorker1.RunWorkerAsync(filter);
+        }
     }
 }
